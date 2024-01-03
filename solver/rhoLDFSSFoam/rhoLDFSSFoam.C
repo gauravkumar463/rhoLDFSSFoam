@@ -22,11 +22,21 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Application
-    rhoCentralFoam
+    rhoLDFSSFoam
 
 Description
-    Density-based compressible flow solver based on central-upwind schemes of
-    Kurganov and Tadmor.
+    Density-based compressible flow solver based on LDFSS schemes of
+    Edwards.
+
+    Kumar, G., & De, A. (2022). An Improved Density-Based Compressible Flow 
+    Solver in OpenFOAM for Unsteady Flow Calculations. In Advances in Fluid 
+    Mechanics: Modelling and Simulations (pp. 43-66). Singapore: Springer 
+    Nature Singapore. 
+    https://link.springer.com/chapter/10.1007/978-981-19-1438-6_2
+
+    Edwards, J.R. and Liou, M.-S. “Low-Diffusion Flux-Splitting Methods for 
+    Flows at All Speeds,” AIAA Journal, Vol. 36, No. 9, 1998, pp. 1610-1617 
+    https://doi.org/10.2514/2.587
 
 \*---------------------------------------------------------------------------*/
 
