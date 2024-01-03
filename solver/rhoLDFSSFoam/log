@@ -1,0 +1,9 @@
+Making dependencies: rhoLDFSSFoam.C
+wmkdepend: parse error while scanning 'createFieldRefs.H' ... perhaps missing a final newline
+g++ -std=c++11 -m64 -pthread -DOPENFOAM=2306 -DWM_DP -DWM_LABEL_SIZE=32 -Wall -Wextra -Wold-style-cast -Wnon-virtual-dtor -Wno-unused-parameter -Wno-invalid-offsetof -Wno-attributes -Wno-unknown-pragmas -O3  -DNoRepository -ftemplate-depth-100  -I/home/gaurav/OpenFOAM/OpenFOAM-v2306/applications/solvers/compressible/rhoCentralFoam/BCs/lnInclude -I/home/gaurav/OpenFOAM/OpenFOAM-v2306/src/finiteVolume/lnInclude -I/home/gaurav/OpenFOAM/OpenFOAM-v2306/src/transportModels/compressible/lnInclude -I/home/gaurav/OpenFOAM/OpenFOAM-v2306/src/thermophysicalModels/basic/lnInclude -I/home/gaurav/OpenFOAM/OpenFOAM-v2306/src/thermophysicalModels/specie/lnInclude -I/home/gaurav/OpenFOAM/OpenFOAM-v2306/src/TurbulenceModels/turbulenceModels/lnInclude -I/home/gaurav/OpenFOAM/OpenFOAM-v2306/src/TurbulenceModels/compressible/lnInclude -I/home/gaurav/OpenFOAM/OpenFOAM-v2306/src/dynamicMesh/lnInclude -I/home/gaurav/OpenFOAM/OpenFOAM-v2306/src/meshTools/lnInclude  -iquote. -IlnInclude -I/home/gaurav/OpenFOAM/OpenFOAM-v2306/src/OpenFOAM/lnInclude -I/home/gaurav/OpenFOAM/OpenFOAM-v2306/src/OSspecific/POSIX/lnInclude   -fPIC -c rhoLDFSSFoam.C -o Make/linux64GccDPInt32Opt/rhoLDFSSFoam.o
+In file included from rhoLDFSSFoam.C:56:
+createFieldRefs.H: In function ‘int main(int, char**)’:
+createFieldRefs.H:46:17: error: no match for call to ‘(const Foam::DimensionedField<double, Foam::volMesh>) ()’
+   46 |     pow(mesh.V()(),2.0/3)
+      |         ~~~~~~~~^~
+make: *** [/home/gaurav/OpenFOAM/OpenFOAM-v2306/wmake/rules/General/transform:38: Make/linux64GccDPInt32Opt/rhoLDFSSFoam.o] Error 1
