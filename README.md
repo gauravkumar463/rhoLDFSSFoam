@@ -14,7 +14,7 @@ The comparison of numerical diffusion between Kurganov and LDFSS schemes is made
 ![forwardStepComp1](https://github.com/gauravkumar463/rhoLDFSSFoam/assets/4538589/14f9ae43-8a2b-49da-b9a4-b023ce84f255)
 
 
-
+4. rhoCentralFoam does not consider turbulent kinetic energy while computing $E = e + 0.5|\vec{u}|^2 + k$. This is corrected in the present solver.
 
 
 
