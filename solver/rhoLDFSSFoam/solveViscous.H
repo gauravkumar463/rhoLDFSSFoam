@@ -13,7 +13,7 @@ e.correctBoundaryConditions();
 solve
 (
 	fvm::ddt(rho,e) - fvc::ddt(rho, e)
-  - fvm::laplacian(thermo.alpha()+turbulence->alphat(), e)
+  - fvm::laplacian(thermo.gamma()*(thermo.alpha()+turbulence->alphat()), e)
   - fvc::div
     (
         (fvc::interpolate(muEff)*mesh.magSf()*fvc::snGrad(U)
