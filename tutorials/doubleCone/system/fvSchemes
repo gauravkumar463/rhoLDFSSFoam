@@ -1,0 +1,63 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  dev                                   |
+|   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      fvSchemes;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+inviscid	    false;
+
+e0		    -302433;
+
+ddtSchemes
+{
+    default         Euler;
+}  
+
+gradSchemes
+{
+    default         Gauss linear;
+}
+
+divSchemes
+{
+    default         none;
+    div(tauMC)      Gauss linear;
+}
+
+laplacianSchemes
+{
+    default         Gauss linear corrected;
+}
+
+interpolationSchemes
+{
+    default         linear;
+    reconstruct(p)  vanLeer; // change to upwind for initial solution upto 2e-4;
+    reconstruct(U)  vanLeerV;
+    reconstruct(T)  vanLeer;
+    reconstruct(e)  vanLeer;
+    reconstruct(k)  vanLeer; // For turbulence. No need to change
+}
+
+snGradSchemes
+{
+    default         corrected;
+}
+
+wallDist
+{
+    method	    meshWave;
+}
+
+// ************************************************************************* //

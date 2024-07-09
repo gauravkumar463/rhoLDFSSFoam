@@ -1,0 +1,71 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  dev                                   |
+|   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "constant";
+    object      thermophysicalProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+thermoType
+{
+    type            hePsiThermo;
+    mixture         pureMixture;
+    transport       sutherland;
+    thermo          janaf;
+    equationOfState perfectGas;
+    specie          specie;
+    energy          sensibleInternalEnergy;
+}
+
+//mixture
+//{
+//    specie
+//    {
+//        nMoles          1;
+//        molWeight       28.96;
+//    }
+//    thermodynamics
+//    {
+//        Cp              1004.5;
+//        Hf              2.544e+06;
+//    }
+//    transport
+//    {
+//        mu              1.8e-05;
+//        Pr              0.7;
+//    }
+//}
+
+mixture
+{
+    specie
+    {
+        molWeight       28.9;
+    }
+    thermodynamics
+   {
+        Tlow 30;
+        Thigh 6000;
+        Tcommon 1000;
+        highCpCoeffs (3.129672277499967 1.211766752750042e-3 -4.04761109000018e-7 6.409571300000324e-11 -3.780447620000211e-15 -.996955811e3 5.257756413);
+        lowCpCoeffs  (3.593868050000014 -8.419292810001117e-4 2.08457592775033e-6 -5.938441825004294e-10 -2.456771699998039e-13 -1.0512181e3 3.140021718);
+
+    }
+    transport
+    {
+        As              1.4745E-6;
+        Ts              113;
+    }
+}
+
+
+// ************************************************************************* //
