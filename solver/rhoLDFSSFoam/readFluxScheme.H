@@ -1,18 +1,18 @@
 word fluxScheme("LDFSS");
 if (mesh.schemesDict().readIfPresent("fluxScheme", fluxScheme))
+{}
+
+if ((fluxScheme == "Tadmor") || (fluxScheme == "Kurganov") || (fluxScheme == "LDFSS"))
 {
-    if ((fluxScheme == "Tadmor") || (fluxScheme == "Kurganov") || (fluxScheme == "LDFSS"))
-    {
-        Info<< "fluxScheme: " << fluxScheme << endl;
-    }
-    else
-    {
-        FatalErrorInFunction
-            << "fluxScheme: " << fluxScheme
-            << " is not a valid choice. "
-            << "Options are: LDFSS, Tadmor, Kurganov"
-            << abort(FatalError);
-    }
+    Info<< "fluxScheme: " << fluxScheme << endl;
+}
+else
+{
+    FatalErrorInFunction
+        << "fluxScheme: " << fluxScheme
+        << " is not a valid choice. "
+        << "Options are: LDFSS, Tadmor, Kurganov"
+        << abort(FatalError);
 }
 
 
