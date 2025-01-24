@@ -9,6 +9,9 @@ surfaceScalarField rpsi_neg(interpolate(rpsi, neg, T.name()));
 surfaceScalarField e_pos(interpolate(e, pos, T.name()));
 surfaceScalarField e_neg(interpolate(e, neg, T.name()));
 
+surfaceScalarField T_pos(interpolate(T, pos, T.name()));
+surfaceScalarField T_neg(interpolate(T, neg, T.name()));
+
 surfaceScalarField p_pos(interpolate(p, pos, p.name()));
 surfaceScalarField p_neg(interpolate(p, neg, p.name()));
 
@@ -26,6 +29,8 @@ forAll(phi,faceI){
         amaxSf[faceI],
         p_pos[faceI],
         p_neg[faceI],
+        T_pos[faceI],
+        T_neg[faceI],
         U_pos[faceI],
         U_neg[faceI],
         rpsi_pos[faceI],
@@ -52,6 +57,7 @@ forAll(bfield, patchi)
     fvsPatchScalarField& phiEpp = phiEp.boundaryFieldRef()[patchi];
     fvsPatchScalarField& amaxSfp = amaxSf.boundaryFieldRef()[patchi];
     const fvPatchScalarField& pp = p.boundaryField()[patchi];
+    const fvPatchScalarField& Tp = T.boundaryField()[patchi];
     const fvPatchVectorField& Up = U.boundaryField()[patchi];
     const fvPatchScalarField& rpsip = rpsi.boundaryField()[patchi];
     const fvPatchScalarField& ep = e.boundaryField()[patchi];
@@ -68,6 +74,7 @@ forAll(bfield, patchi)
         const scalarField ecp = e.boundaryField()[patchi].patchInternalField();
         const scalarField kcp = k_.boundaryField()[patchi].patchInternalField();
         const scalarField pcnb = p.boundaryField()[patchi].patchNeighbourField();
+        const scalarField Tcnb = T.boundaryField()[patchi].patchNeighbourField();
         const vectorField Ucnb = U.boundaryField()[patchi].patchNeighbourField();
         const scalarField rpsicnb = rpsi.boundaryField()[patchi].patchNeighbourField();
         const scalarField ecnb = e.boundaryField()[patchi].patchNeighbourField();
@@ -83,6 +90,8 @@ forAll(bfield, patchi)
                 amaxSfp[faceI],
                 pcp[faceI],
                 pcnb[faceI],
+                Tcp[faceI],
+                Tcnb[faceI],
                 Ucp[faceI],
                 Ucnb[faceI],
                 rpsicp[faceI],
@@ -110,6 +119,8 @@ forAll(bfield, patchi)
                 amaxSfp[faceI],
                 pp[faceI],
                 pp[faceI],
+                Tp[faceI],
+                Tp[faceI],
                 Up[faceI],
                 Up[faceI],
                 rpsip[faceI],

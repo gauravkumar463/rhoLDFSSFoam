@@ -57,6 +57,8 @@ void Foam::inviscidFlux::evaluateFlux
     scalar& amaxSf,
     const scalar pLeft,
     const scalar pRight,
+    const scalar TLeft,
+    const scalar TRight,
     const vector ULeft,
     const vector URight,
     const scalar rpsiLeft,
@@ -80,8 +82,8 @@ void Foam::inviscidFlux::evaluateFlux
     scalar aLeft = sqrt(gamma*rpsiLeft);
     scalar aRight = sqrt(gamma*rpsiRight);
 
-    scalar qLeft = (ULeft & n)-(phi/magSf); // phi is the "mesh velocity flux" = mesh.phi(), generally non-zero for moving mesh simulations and AMR 
-    scalar qRight = (URight & n)-(phi/magSf);
+    scalar qLeft =  (ULeft & n)  - (phi/magSf); // phi is the "flux vector" == u * Sf
+    scalar qRight = (URight & n) - (phi/magSf);
 
     // M+ == MLeft
     // M- == MRight
@@ -113,8 +115,8 @@ void Foam::inviscidFlux::evaluateFlux
     	scalar alphaLeft = 0.5*(1.0 + sign(MLeft));
     	scalar alphaRight = 0.5*(1.0 - sign(MRight));
 
-    	scalar betaLeft = -max(0.0,1-(int)mag(MLeft));
-    	scalar betaRight = -max(0.0,1-(int)mag(MRight));
+    	scalar betaLeft = -max(0.0,1-int(mag(MLeft)));
+    	scalar betaRight = -max(0.0,1-int(mag(MRight)));
 
     	scalar M4Left = 0.25*sqr(MLeft+1) + (1.0/8.0)*sqr(sqr(MLeft)-1);
     	scalar M4Right= -0.25*sqr(MRight-1) - (1.0/8.0)*sqr(sqr(MRight)-1);
@@ -147,67 +149,61 @@ void Foam::inviscidFlux::evaluateFlux
     	rhoEFlux = magSf*(rhoLeft*HLeft*UPlus + rhoRight*HRight*Uminus);
     }
     else if(scheme == "AUSMPWplus"){
-        scalar TLeft  = rpsiLeft / thermo().R;
-        scalar TRight = rpsiRight / thermo().R;
+        // Hong Kim, Chongam Kim, Oh-Hyun Rho,
+        // Methods for the Accurate Computations of Hypersonic Flows: I. AUSMPW+Scheme,
+        // Journal of Computational Physics, Volume 174, Issue 1, 2001, Pages 38-80,
+        // ISSN 0021-9991, https://doi.org/10.1006/jcph.2001.6873.
 
-    	scalar rhoHalf = 0.5*(rhoLeft+rhoRight);
-    	scalar aHalf = sqrt(0.5*(sqr(aLeft)+sqr(aRight)));
-
-    	scalar MLeft = qLeft/aHalf;
-    	scalar MRight = qRight/aHalf;
-    	scalar Mavg = sqrt(0.5*(sqr(MLeft)+sqr(MRight)));
-
-    	//scalar Ur2Sf = sqr(aHalf);
-    	scalar Ur2Sf = min(sqr(aHalf),max(0.5*(magSqr(ULeft)+magSqr(URight)),0.09*sqr(aHalf)));
-    	//scalar Ur2Sf = sqr(aHalf*min(max(1.0,0.5*(qLeft+qRight)),1.0));
-    	scalar Mr2Half = Ur2Sf/sqr(aHalf);
-
-    	scalar fHalf =  sqrt((sqr(1-Mr2Half)*sqr(Mavg))+(4*Mr2Half))/(1+Mr2Half);
-    	scalar aTildeHalf = fHalf*aHalf;
-
-    	MLeft = MLeft/fHalf;
-    	MRight = MRight/fHalf;
-    	Mavg = sqrt(0.5*(sqr(MLeft)+sqr(MRight)));
-
-    	amaxSf = 0.5*aTildeHalf*(1+Mr2Half)*(Mavg+1)*magSf;
-    	//amaxSf = aHalf*max(max(Mavg,(Mavg+1.0)),Mavg-1.0)*magSf;
-    	//amaxSf = aHalf*(Mavg+1.0)*magSf;
-
-    	scalar alphaLeft = 0.5*(1.0 + sign(MLeft));
-    	scalar alphaRight = 0.5*(1.0 - sign(MRight));
-
-    	scalar betaLeft = -max(0.0,1-(int)mag(MLeft));
-    	scalar betaRight = -max(0.0,1-(int)mag(MRight));
-
-    	scalar M4Left = 0.25*sqr(MLeft+1) + (1.0/8.0)*sqr(sqr(MLeft)-1);
-    	scalar M4Right= -0.25*sqr(MRight-1) - (1.0/8.0)*sqr(sqr(MRight)-1);
-
-    	scalar Mplus = (alphaLeft*(1+betaLeft)*MLeft) - (betaLeft*M4Left);
-    	scalar Mminus = (alphaRight*(1+betaRight)*MRight) - (betaRight*M4Right);
-
-    	scalar MHalf = 0.25*betaLeft*betaRight*sqr(sqrt(0.5*(sqr(MLeft)+sqr(MRight)))-1.0);
+        const scalar alpha = 3.0 / 16.0;
 
 
-    	scalar UPlus = aTildeHalf*(Mplus - (MHalf*(1.0-((pLeft-pRight)/(2*rhoLeft*Ur2Sf)))));
-    	scalar Uminus = aTildeHalf*(Mminus + (MHalf*(1.0+((pLeft-pRight)/(2*rhoRight*Ur2Sf)))));
+        // Eq (31 ff.)
+    	scalar HnLeft  = eLeft  + 0.5*magSqr(ULeft)  + kLeft  + pLeft/rhoLeft;
+    	scalar HnRight = eRight + 0.5*magSqr(URight) + kRight + pRight/rhoRight;
+        scalar Hn      = 0.5 * ( HnLeft  - 0.5 * ( sqr(ULeft.component(1))  + sqr(ULeft.component(2)) )
+                               + HnRight - 0.5 * ( sqr(URight.component(1)) + sqr(URight.component(2)) ));
+        scalar aStar   = sqrt( 2.0 * (gamma - 1) / (gamma + 1) * Hn);
 
-    	scalar M5Left = 0.25*sqr(MLeft+1)*(2-MLeft) + (3.0/16.0)*MLeft*sqr(sqr(MLeft)-1);
-    	scalar M5Right = 0.25*sqr(MRight-1)*(2+MRight) - (3.0/16.0)*MRight*sqr(sqr(MRight)-1);
+        // Eq (32)
+        scalar a12     = ( 0.5 * ( qLeft + qRight ) ) > 0 ?
+                           sqr(aStar) / max(mag(qLeft), aStar) :
+                           sqr(aStar) / max(mag(qRight), aStar);
 
-    	scalar p1Left = alphaLeft*(1+betaLeft) - betaLeft*M5Left;
-    	scalar p1Right = alphaRight*(1+betaRight) - betaRight*M5Right;
+        // Eq (29)
+        scalar MLeft   = qLeft  / a12;   
+        scalar MRight  = qRight / a12;   
 
-    	scalar pHalf = 0.5*(pLeft+pRight) + 0.5*(p1Left-p1Right)*(pLeft-pRight) 
-                                + rhoHalf*Ur2Sf*(p1Left+p1Right-1.0);
+        // Mach number and pressure splitting functions Eq (27) and (28) ("Mach_Left_plus, ...")
 
-    	scalar HLeft = eLeft + 0.5*magSqr(ULeft) + kLeft + pHalf/rhoLeft;
-    	scalar HRight = eRight + 0.5*magSqr(URight) + kRight + pHalf/rhoRight;
+        // Eq (27)
+        scalar Mlp = mag(MLeft)  > 1 ? 0.5 * (MLeft  + mag(MLeft))  :  0.25 * sqr(MLeft + 1);
+        // scalar Mlm = mag(MLeft)  > 1 ? 0.5 * (MLeft  + mag(MLeft))  : -0.25 * sqr(MLeft + 1);
+        // scalar Mrp = mag(MRight) > 1 ? 0.5 * (MRight + mag(MRight)) :  0.25 * sqr(MRight + 1);
+        scalar Mrm = mag(MRight) > 1 ? 0.5 * (MRight + mag(MRight)) : -0.25 * sqr(MRight + 1);
 
-    	rhoFlux  = magSf*(rhoLeft*UPlus + rhoRight*Uminus);
+        // Eq (28)
+        scalar plp = mag(MLeft)  > 1 ? 0.5 * (1 + sign(MLeft))  : 0.25 * sqr(MLeft + 1)  * (2 - MLeft)  + alpha * MLeft  * sqr( sqr(MLeft) - 1);
+        // scalar plm = mag(MLeft)  > 1 ? 0.5 * (1 - sign(MLeft))  : 0.25 * sqr(MLeft - 1)  * (2 + MLeft)  - alpha * MLeft  * sqr( sqr(MLeft) - 1);
+        // scalar prp = mag(MRight) > 1 ? 0.5 * (1 + sign(MRight)) : 0.25 * sqr(MRight + 1) * (2 - MRight) + alpha * MRight * sqr( sqr(MRight) - 1);
+        scalar prm = mag(MRight) > 1 ? 0.5 * (1 - sign(MRight)) : 0.25 * sqr(MRight - 1) * (2 + MRight) - alpha * MRight * sqr( sqr(MRight) - 1);
 
-    	rhoUFlux = magSf*(rhoLeft*ULeft*UPlus + rhoRight*URight*Uminus) + pHalf*Sf;
+        // Eq (26)
+        scalar ps  = plp * pLeft + prm * pRight;
+        scalar fL  = ps > 0 ? pLeft  / ps - 1 : 0.0;
+        scalar fR  = ps > 0 ? pRight / ps - 1 : 0.0;
 
-    	rhoEFlux = magSf*(rhoLeft*HLeft*UPlus + rhoRight*HRight*Uminus);
+        // Eq (25)
+        scalar w   = 1 - pow( min(pLeft/pRight, pRight/pLeft), 3);
+
+
+
+    	rhoFlux  = HnLeft;
+    	rhoUFlux = ULeft;
+    	rhoEFlux = HnLeft;
+
+    	// rhoFlux  = magSf*(rhoLeft*UPlus + rhoRight*Uminus);
+    	// rhoUFlux = magSf*(rhoLeft*ULeft*UPlus + rhoRight*URight*Uminus) + pHalf*Sf;
+    	// rhoEFlux = magSf*(rhoLeft*HLeft*UPlus + rhoRight*HRight*Uminus);
     }
     else if((scheme == "Tadmor") || (scheme == "Kurganov")){
         scalar ap = max(max(qLeft+aLeft,qRight+aRight),0.0);

@@ -1,4 +1,3 @@
 inviscidFlux.C
 
-
 LIB = $(FOAM_USER_LIBBIN)/libLDFSS

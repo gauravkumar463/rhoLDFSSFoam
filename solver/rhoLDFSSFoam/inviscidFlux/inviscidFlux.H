@@ -78,6 +78,8 @@ public:
         scalar& amaxSf,
         const scalar pLeft,
         const scalar pRight,
+        const scalar TLeft,
+        const scalar TRight,
         const vector ULeft,
         const vector URight,
         const scalar rpsiLeft,
