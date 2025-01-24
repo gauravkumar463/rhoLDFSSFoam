@@ -80,7 +80,7 @@ void Foam::inviscidFlux::evaluateFlux
     scalar aLeft = sqrt(gamma*rpsiLeft);
     scalar aRight = sqrt(gamma*rpsiRight);
 
-    scalar qLeft = (ULeft & n)-(phi/magSf); // phi is the "mass flux" == u * Sf
+    scalar qLeft = (ULeft & n)-(phi/magSf); // phi is the "mesh velocity flux" = mesh.phi(), generally non-zero for moving mesh simulations and AMR 
     scalar qRight = (URight & n)-(phi/magSf);
 
     // M+ == MLeft
