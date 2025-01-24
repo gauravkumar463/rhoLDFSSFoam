@@ -1,0 +1,11 @@
+.vscode
+**/*/linux64*
+**/*/lnInclude
+**/*/log*
+**/*/out*
+**/*/.log*
+**/*/.out*
+tutorials/**/0.*
+tutorials/**/*e-*
+tutorials/**/proc*
+tutorials/**/[1-9]
