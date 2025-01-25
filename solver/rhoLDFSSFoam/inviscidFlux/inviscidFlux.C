@@ -82,8 +82,8 @@ void Foam::inviscidFlux::evaluateFlux
     scalar aLeft = sqrt(gamma*rpsiLeft);
     scalar aRight = sqrt(gamma*rpsiRight);
 
-    scalar qLeft =  (ULeft & n)  - (phi/magSf); // phi is the "flux vector" == u * Sf
-    scalar qRight = (URight & n) - (phi/magSf);
+    scalar uLeft =  (ULeft & n)  - (phi/magSf); // phi is the "flux vector" == u * Sf
+    scalar uRight = (URight & n) - (phi/magSf);
 
     // M+ == MLeft
     // M- == MRight
@@ -92,8 +92,8 @@ void Foam::inviscidFlux::evaluateFlux
     	scalar rhoHalf = 0.5*(rhoLeft+rhoRight);
     	scalar aHalf = sqrt(0.5*(sqr(aLeft)+sqr(aRight)));
 
-    	scalar MLeft = qLeft/aHalf;
-    	scalar MRight = qRight/aHalf;
+    	scalar MLeft = uLeft/aHalf;
+    	scalar MRight = uRight/aHalf;
     	scalar Mavg = sqrt(0.5*(sqr(MLeft)+sqr(MRight)));
 
     	//scalar Ur2Sf = sqr(aHalf);
@@ -154,60 +154,59 @@ void Foam::inviscidFlux::evaluateFlux
         // Journal of Computational Physics, Volume 174, Issue 1, 2001, Pages 38-80,
         // ISSN 0021-9991, https://doi.org/10.1006/jcph.2001.6873.
 
+        // Flux scheme constants
         const scalar alpha = 3.0 / 16.0;
 
+        // Tangential velocity components, squared
+        scalar vLeftSqr  = magSqr(ULeft)  - sqr(uLeft);
+        scalar vRightSqr = magSqr(URight) - sqr(uRight);
 
-        // Eq (31 ff.)
+        // "Normal" enthalpy Eq (31 ff.)
     	scalar HnLeft  = eLeft  + 0.5*magSqr(ULeft)  + kLeft  + pLeft/rhoLeft;
     	scalar HnRight = eRight + 0.5*magSqr(URight) + kRight + pRight/rhoRight;
-        scalar Hn      = 0.5 * ( HnLeft  - 0.5 * ( sqr(ULeft.component(1))  + sqr(ULeft.component(2)) )
-                               + HnRight - 0.5 * ( sqr(URight.component(1)) + sqr(URight.component(2)) ));
+        scalar Hn      = 0.5 * ( HnLeft - 0.5*vLeftSqr + HnRight - 0.5*vRightSqr );
+        // TODO: In case of multiple species, there should be a aStarLeft and aStarRight for left and right gamma states
         scalar aStar   = sqrt( 2.0 * (gamma - 1) / (gamma + 1) * Hn);
 
         // Eq (32)
-        scalar a12     = ( 0.5 * ( qLeft + qRight ) ) > 0 ?
-                           sqr(aStar) / max(mag(qLeft), aStar) :
-                           sqr(aStar) / max(mag(qRight), aStar);
+        scalar a12     = ( (0.5 * ( uLeft + uRight )) > SMALL ? (sqr(aStar) / max(mag(uLeft), aStar)) : (sqr(aStar) / max(mag(uRight), aStar)) );
 
         // Eq (29)
-        scalar MLeft   = qLeft  / a12;   
-        scalar MRight  = qRight / a12;   
+        scalar MLeft   = uLeft  / a12;   
+        scalar MRight  = uRight / a12;   
 
         // Mach number and pressure splitting functions Eq (27) and (28) ("Mach_Left_plus, ...")
-
         // Eq (27)
-        scalar Mlp = mag(MLeft)  > 1 ? 0.5 * (MLeft  + mag(MLeft))  :  0.25 * sqr(MLeft + 1);
-        // scalar Mlm = mag(MLeft)  > 1 ? 0.5 * (MLeft  + mag(MLeft))  : -0.25 * sqr(MLeft + 1);
-        // scalar Mrp = mag(MRight) > 1 ? 0.5 * (MRight + mag(MRight)) :  0.25 * sqr(MRight + 1);
-        scalar Mrm = mag(MRight) > 1 ? 0.5 * (MRight + mag(MRight)) : -0.25 * sqr(MRight + 1);
+        scalar Mlp = ( (mag(MLeft)  >= 1.0) ? (0.5 * (MLeft  + mag(MLeft)))  : ( 0.25 * sqr(MLeft  + 1.0)) );
+        scalar Mrm = ( (mag(MRight) >= 1.0) ? (0.5 * (MRight + mag(MRight))) : (-0.25 * sqr(MRight + 1.0)) );
 
         // Eq (28)
-        scalar plp = mag(MLeft)  > 1 ? 0.5 * (1 + sign(MLeft))  : 0.25 * sqr(MLeft + 1)  * (2 - MLeft)  + alpha * MLeft  * sqr( sqr(MLeft) - 1);
-        // scalar plm = mag(MLeft)  > 1 ? 0.5 * (1 - sign(MLeft))  : 0.25 * sqr(MLeft - 1)  * (2 + MLeft)  - alpha * MLeft  * sqr( sqr(MLeft) - 1);
-        // scalar prp = mag(MRight) > 1 ? 0.5 * (1 + sign(MRight)) : 0.25 * sqr(MRight + 1) * (2 - MRight) + alpha * MRight * sqr( sqr(MRight) - 1);
-        scalar prm = mag(MRight) > 1 ? 0.5 * (1 - sign(MRight)) : 0.25 * sqr(MRight - 1) * (2 + MRight) - alpha * MRight * sqr( sqr(MRight) - 1);
+        scalar plp = ( (mag(MLeft)  > 1.0) ? (0.5 * (1.0 + sign(MLeft)))  : (0.25 * sqr(MLeft  + 1.0) * (2 - MLeft)  + alpha * MLeft  * sqr( sqr(MLeft) - 1.0)) );
+        scalar prm = ( (mag(MRight) > 1.0) ? (0.5 * (1.0 - sign(MRight))) : (0.25 * sqr(MRight - 1.0) * (2 + MRight) - alpha * MRight * sqr( sqr(MRight) - 1.0)) );
 
         // Eq (26)
         scalar ps  = plp * pLeft + prm * pRight;
-        scalar fL  = ps > 0 ? pLeft  / ps - 1 : 0.0;
-        scalar fR  = ps > 0 ? pRight / ps - 1 : 0.0;
+        scalar fL  = ( (ps > SMALL) ? (pLeft  / ps - 1.0) : (0.0) );
+        scalar fR  = ( (ps > SMALL) ? (pRight / ps - 1.0) : (0.0) );
 
         // Eq (25)
-        scalar w   = 1 - pow( min(pLeft/pRight, pRight/pLeft), 3);
+        scalar w   = 1 - pow( min(pLeft/pRight, pRight/pLeft), 3.0);
+
+        // m12 below Eq (13)
+        scalar m12 = Mlp + Mrm;
+
+        // Below Eq (24)
+        scalar barMlp = ( (m12 >= SMALL) ? (Mlp + Mrm * ((1.0 - w) * (1.0 + fR) - fL)) : (Mlp * w * (1 + fL)) );
+        scalar barMrm = ( (m12 >= SMALL) ? (Mrm * w * (1 + fR)) : (Mrm + Mlp * ( (1.0 - w) * (1.0 + fL) + fL - fR) ) );
 
 
-
-    	rhoFlux  = HnLeft;
-    	rhoUFlux = ULeft;
-    	rhoEFlux = HnLeft;
-
-    	// rhoFlux  = magSf*(rhoLeft*UPlus + rhoRight*Uminus);
-    	// rhoUFlux = magSf*(rhoLeft*ULeft*UPlus + rhoRight*URight*Uminus) + pHalf*Sf;
-    	// rhoEFlux = magSf*(rhoLeft*HLeft*UPlus + rhoRight*HRight*Uminus);
+    	rhoFlux  = ( barMlp * a12 * rhoLeft        + barMrm * a12 * rhoRight         ) * magSf;
+    	rhoUFlux = ( barMlp * a12 * rhoLeft*ULeft  + barMrm * a12 * rhoRight*URight  ) * magSf + ps * Sf;
+    	rhoEFlux = ( barMlp * a12 * rhoLeft*HnLeft + barMrm * a12 * rhoRight*HnRight ) * magSf;
     }
     else if((scheme == "Tadmor") || (scheme == "Kurganov")){
-        scalar ap = max(max(qLeft+aLeft,qRight+aRight),0.0);
-        scalar am = min(min(qLeft-aLeft,qRight-aRight),0.0);
+        scalar ap = max(max(uLeft+aLeft,uRight+aRight),0.0);
+        scalar am = min(min(uLeft-aLeft,uRight-aRight),0.0);
 
         scalar aPos = ap/(ap-am);
 
@@ -222,13 +221,13 @@ void Foam::inviscidFlux::evaluateFlux
 
         scalar aNeg = 1.0-aPos;
 
-        qLeft *= aPos;
-        qRight *= aNeg;
+        uLeft *= aPos;
+        uRight *= aNeg;
 
-        scalar aqLeft = qLeft - aSf;
-        scalar aqRight = qRight + aSf;
+        scalar auLeft = uLeft - aSf;
+        scalar auRight = uRight + aSf;
 
-        amaxSf = magSf*max(mag(aqLeft),mag(aqRight));
+        amaxSf = magSf*max(mag(auLeft),mag(auRight));
 
 	//scalar HLeft = (rpsiLeft/(gamma-1)) + 0.5*magSqr(ULeft) + pLeft/rhoLeft;
         //scalar HRight = (rpsiRight/(gamma-1)) + 0.5*magSqr(URight) + pRight/rhoRight;
@@ -236,11 +235,11 @@ void Foam::inviscidFlux::evaluateFlux
         scalar HLeft = eLeft + 0.5*magSqr(ULeft) + kLeft + pLeft/rhoLeft;
         scalar HRight = eRight + 0.5*magSqr(URight) + kRight + pRight/rhoRight;
 
-        rhoFlux = magSf*(rhoLeft*aqLeft+ rhoRight*aqRight);
+        rhoFlux = magSf*(rhoLeft*auLeft+ rhoRight*auRight);
 
-        rhoUFlux = magSf*(rhoLeft*ULeft*aqLeft + rhoRight*URight*aqRight) + (aPos*pLeft+aNeg*pRight)*Sf;
+        rhoUFlux = magSf*(rhoLeft*ULeft*auLeft + rhoRight*URight*auRight) + (aPos*pLeft+aNeg*pRight)*Sf;
 
-        rhoEFlux = magSf*(rhoLeft*HLeft*aqLeft + rhoRight*HRight*aqRight + aSf*(pLeft-pRight)) + phi*(aPos*pLeft + aNeg*pRight);
+        rhoEFlux = magSf*(rhoLeft*HLeft*auLeft + rhoRight*HRight*auRight + aSf*(pLeft-pRight)) + phi*(aPos*pLeft + aNeg*pRight);
 
     //    Uf = aPos*ULeft + aNeg*URight;
     }
