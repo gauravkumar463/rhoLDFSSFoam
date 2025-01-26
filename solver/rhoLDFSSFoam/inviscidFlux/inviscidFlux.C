@@ -155,54 +155,128 @@ void Foam::inviscidFlux::evaluateFlux
         // ISSN 0021-9991, https://doi.org/10.1006/jcph.2001.6873.
 
         // Flux scheme constants
-        const scalar alpha = 3.0 / 16.0;
+        const scalar alpha = 3.0/16.0;
+        const scalar beta  = 1.0/8.0;
 
         // Tangential velocity components, squared
-        scalar vLeftSqr  = magSqr(ULeft)  - sqr(uLeft);
-        scalar vRightSqr = magSqr(URight) - sqr(uRight);
+        const scalar vLeftSqr  = magSqr(ULeft)  - sqr(uLeft);
+        const scalar vRightSqr = magSqr(URight) - sqr(uRight);
 
         // "Normal" enthalpy Eq (31 ff.)
-    	scalar HnLeft  = eLeft  + 0.5*magSqr(ULeft)  + kLeft  + pLeft/rhoLeft;
-    	scalar HnRight = eRight + 0.5*magSqr(URight) + kRight + pRight/rhoRight;
-        scalar Hn      = 0.5 * ( HnLeft - 0.5*vLeftSqr + HnRight - 0.5*vRightSqr );
-        // TODO: In case of multiple species, there should be a aStarLeft and aStarRight for left and right gamma states
-        scalar aStar   = sqrt( 2.0 * (gamma - 1) / (gamma + 1) * Hn);
+    	const scalar HnLeft  = eLeft  + 0.5*magSqr(ULeft)  + kLeft  + pLeft/rhoLeft;
+        const scalar HnRight = eRight + 0.5*magSqr(URight) + kRight + pRight/rhoRight;
+        const scalar Hn      = 0.5 * (HnLeft+HnRight - 0.5*(vLeftSqr + vRightSqr));
+        
+        const scalar aStar   = sqrt(2.0*(gamma - 1)/(gamma + 1)*Hn);
 
         // Eq (32)
-        scalar a12     = ( (0.5 * ( uLeft + uRight )) > SMALL ? (sqr(aStar) / max(mag(uLeft), aStar)) : (sqr(aStar) / max(mag(uRight), aStar)) );
+        scalar a12;
+
+        if ( (0.5*(uLeft + uRight)) > 0 )
+        {
+            a12 = sqr(aStar)/max(fabs(uLeft), aStar);
+        }
+        else
+        {
+            a12 = sqr(aStar)/max(fabs(uRight), aStar);
+        }
 
         // Eq (29)
-        scalar MLeft   = uLeft  / a12;   
-        scalar MRight  = uRight / a12;   
+        const scalar MLeft   = uLeft/a12;   
+        const scalar MRight  = uRight/a12;   
 
         // Mach number and pressure splitting functions Eq (27) and (28) ("Mach_Left_plus, ...")
         // Eq (27)
-        scalar Mlp = ( (mag(MLeft)  >= 1.0) ? (0.5 * (MLeft  + mag(MLeft)))  : ( 0.25 * sqr(MLeft  + 1.0)) );
-        scalar Mrm = ( (mag(MRight) >= 1.0) ? (0.5 * (MRight + mag(MRight))) : (-0.25 * sqr(MRight + 1.0)) );
+        scalar Mlp, Plp;
 
-        // Eq (28)
-        scalar plp = ( (mag(MLeft)  > 1.0) ? (0.5 * (1.0 + sign(MLeft)))  : (0.25 * sqr(MLeft  + 1.0) * (2 - MLeft)  + alpha * MLeft  * sqr( sqr(MLeft) - 1.0)) );
-        scalar prm = ( (mag(MRight) > 1.0) ? (0.5 * (1.0 - sign(MRight))) : (0.25 * sqr(MRight - 1.0) * (2 + MRight) - alpha * MRight * sqr( sqr(MRight) - 1.0)) );
+        if (MLeft >= 1.0)
+        {
+            // scalar Mlp = 0.5*(MLeft  + mag(MLeft));
+            Mlp = MLeft;
+            Plp = 1.0;
+        }
+        else if (MLeft > -1.0)
+        {
+            Mlp = sqr(1 + MLeft)/4 + beta*sqr(1 - sqr(MLeft));
+            Plp = sqr(1 + MLeft)*(2 - MLeft)/4 + alpha * MLeft*sqr(1 - sqr(MLeft));
+        }
+        else
+        {
+            Mlp = 0.0;
+            Plp = 0.0;
+        }
+
+        scalar Mrm, Prm;
+
+        if (MRight <= -1.0)
+        {
+            Mrm = MRight;
+            Prm = 1.0;
+        }
+        else if (MRight < 1.0)
+        {
+            Mrm = - sqr(1 - MRight)/4 - beta * sqr(1 - sqr(MRight));
+            Prm = sqr(1 - MRight)*(2 + MRight)/4 - alpha * MRight * sqr(1 - sqr(MRight));
+        }
+        else
+        {
+            Mrm = 0.0;
+            Prm = 0.0;
+        }
+          
+        // scalar Mlp = mag(MLeft)  > 1 ? 0.5 * (MLeft  + mag(MLeft))  :  0.25 * sqr(MLeft  + 1) ;
+        // scalar Mrm = mag(MRight) > 1 ? 0.5 * (MRight - mag(MRight)) : -0.25 * sqr(MRight - 1) ;
+
+        // // Eq (28)
+        // scalar Plp = mag(MLeft)  > 1 ? 0.5 * (1 + sign(MLeft))  :  0.25 * sqr(MLeft  + 1) * (2 - MLeft)  + alpha * MLeft  * sqr(sqr(MLeft)  - 1);
+        // scalar Prm = mag(MRight) > 1 ? 0.5 * (1 - sign(MRight)) : -0.25 * sqr(MRight - 1) * (2 + MRight) - alpha * MRight * sqr(sqr(MRight) - 1);
 
         // Eq (26)
-        scalar ps  = plp * pLeft + prm * pRight;
-        scalar fL  = ( (ps > SMALL) ? (pLeft  / ps - 1.0) : (0.0) );
-        scalar fR  = ( (ps > SMALL) ? (pRight / ps - 1.0) : (0.0) );
+        const scalar ps = Plp*pLeft + Prm*pRight;
+
+        scalar fL, fR;
+        if (ps > 0)
+        {
+            fL = pLeft/ps  - 1;
+            fR = pRight/ps - 1;
+        }
+        else
+        {
+            fL = 0.0;
+            fR = 0.0;
+        }
+        // const scalar fL = ps > 0 ? pLeft/ps  - 1 : 0.0;
+        // const scalar fR = ps > 0 ? pRight/ps - 1 : 0.0;
+        // Eq (10) in:  Weigang Yao, Min Xu, "Modified AUSMPW+ Scheme and its Application" 
+        // scalar fL  = mag(MLeft)  < 1 ? pLeft/ps  - 1 : 0;
+        // scalar fR  = mag(MRight) < 1 ? pRight/ps - 1 : 0;
 
         // Eq (25)
-        scalar w   = 1 - pow( min(pLeft/pRight, pRight/pLeft), 3.0);
+        const scalar w   = 1 - pow(min(pLeft/pRight, pRight/pLeft), 3);
 
         // m12 below Eq (13)
-        scalar m12 = Mlp + Mrm;
+        const scalar m12 = Mlp + Mrm;
 
         // Below Eq (24)
-        scalar barMlp = ( (m12 >= SMALL) ? (Mlp + Mrm * ((1.0 - w) * (1.0 + fR) - fL)) : (Mlp * w * (1 + fL)) );
-        scalar barMrm = ( (m12 >= SMALL) ? (Mrm * w * (1 + fR)) : (Mrm + Mlp * ( (1.0 - w) * (1.0 + fL) + fL - fR) ) );
+        scalar barMlp, barMrm;
+
+        if (m12 > 0)
+        {
+            barMlp = Mlp + Mrm*(1 - w*(1 + fL) + (fL - fR));
+            barMrm = Mrm * w*(1+fR);
+        }
+        else
+        {
+            barMlp = Mlp * w*(1+fL);
+            barMrm = Mrm + Mlp*(1 - w*(1 + fL) + (fL - fR));
+        }
+        // scalar barMlp = m12 > 0 ? Mlp + Mrm * ((1 - w)*(1 + fR) - fL) : Mlp * w * (1 + fL);
+        // scalar barMrm = m12 > 0 ? Mrm * w * (1 + fR) : Mrm + Mlp * ((1 - w)*(1 + fL) - fR);
 
 
-    	rhoFlux  = ( barMlp * a12 * rhoLeft        + barMrm * a12 * rhoRight         ) * magSf;
-    	rhoUFlux = ( barMlp * a12 * rhoLeft*ULeft  + barMrm * a12 * rhoRight*URight  ) * magSf + ps * Sf;
-    	rhoEFlux = ( barMlp * a12 * rhoLeft*HnLeft + barMrm * a12 * rhoRight*HnRight ) * magSf;
+    	rhoFlux  = (barMlp * a12 * rhoLeft        + barMrm * a12 * rhoRight        ) * magSf;
+    	rhoUFlux = (barMlp * a12 * rhoLeft*ULeft  + barMrm * a12 * rhoRight*URight ) * magSf + ps*Sf;
+    	rhoEFlux = (barMlp * a12 * rhoLeft*HnLeft + barMrm * a12 * rhoRight*HnRight) * magSf;
     }
     else if((scheme == "Tadmor") || (scheme == "Kurganov")){
         scalar ap = max(max(uLeft+aLeft,uRight+aRight),0.0);

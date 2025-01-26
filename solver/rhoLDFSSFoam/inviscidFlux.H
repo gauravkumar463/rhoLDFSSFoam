@@ -1,6 +1,10 @@
 // calculate square of speed of sound
 volScalarField c2 = (thermo.gamma()-1)*thermo.Cp()*T;
 
+// Thermodynamics
+const volScalarField Cv = thermo_.Cv();
+const volScalarField R  = thermo_.Cp() - Cv;
+
 rpsi = 1/psi;
 
 surfaceScalarField rpsi_pos(interpolate(rpsi, pos, T.name()));
