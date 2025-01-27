@@ -31,6 +31,7 @@ Author
 \*---------------------------------------------------------------------------*/
 
 #include "inviscidFlux.H"
+#include <iostream>
 
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
 
@@ -59,6 +60,8 @@ void Foam::inviscidFlux::evaluateFlux
     const scalar pRight,
     const scalar TLeft,
     const scalar TRight,
+    const scalar CvLeft,
+    const scalar CvRight,
     const vector ULeft,
     const vector URight,
     const scalar rpsiLeft,
@@ -154,114 +157,112 @@ void Foam::inviscidFlux::evaluateFlux
         // Journal of Computational Physics, Volume 174, Issue 1, 2001, Pages 38-80,
         // ISSN 0021-9991, https://doi.org/10.1006/jcph.2001.6873.
 
-        // Flux scheme constants
-        const scalar alpha = 3.0/16.0;
-        // const scalar beta  = 1.0/8.0;
+        std::cout << "\n#################################################";
+        std::cout << "\nThanks for viewing my code!";
+        // std::cout << "\n";
+        std::cout << "\naLeft: "  << aLeft;
+        std::cout << "\naRight: " << aRight;
+        std::cout << "\npLeft: "  << pLeft;
+        std::cout << "\npRight: " << pRight;
+        std::cout << "\nTLeft: "  << TLeft;
+        std::cout << "\nTRight: " << TRight;
+        std::cout << "\nuLeft: "  << uLeft;
+        std::cout << "\nuRight: " << uRight;
+        std::cout << "\n----------------------------";
+        // std::cout << "\n";
 
-        // Tangential velocity components, squared
+        const scalar alpha = 3.0/16.0;
+        const scalar beta  = 1.0/8.0;
+
         scalar vLeftSqr  = magSqr(ULeft)  - sqr(uLeft);
         scalar vRightSqr = magSqr(URight) - sqr(uRight);
 
-        // "Normal" enthalpy Eq (31 ff.)
-    	scalar HnLeft  = eLeft  + 0.5*magSqr(ULeft)  + kLeft  + pLeft/rhoLeft;
-        scalar HnRight = eRight + 0.5*magSqr(URight) + kRight + pRight/rhoRight;
+        std::cout << "\nvLeftSqr: " << vLeftSqr;
+        std::cout << "\nvRightSqr: " << vRightSqr;
+        std::cout << "\n----------------------------";
+
+    	scalar HnLeft  = CvLeft*TLeft   + 0.5*sqr(uLeft)  + kLeft  + pLeft/rhoLeft;
+        scalar HnRight = CvRight*TRight + 0.5*sqr(uRight) + kRight + pRight/rhoRight;
         scalar Hn      = 0.5 * (HnLeft+HnRight - 0.5*(vLeftSqr + vRightSqr));
 
-        // const scalar aStar   = sqrt(2.0*(gamma - 1)/(gamma + 1)*Hn);
-        scalar aStar = sqrt(2.0*(gamma - 1)/(gamma + 1)*Hn);
+        // std::cout << "\nHn: "      << HnRight;
 
-        // Eq (32)
-        scalar a12;
+        scalar aStar = sqrt(2.0*((gamma - 1.)/(gamma + 1.)) *Hn);
+        // scalar aStar = sqrt(0.5*(sqr(aLeft)+sqr(aRight)));
 
-        if ( (0.5*(uLeft + uRight)) > 0 )
-        {
-            a12 = sqr(aStar) / max(mag(uLeft), aStar);
-        }
-        else
-        {
-            a12 = sqr(aStar) / max(mag(uRight), aStar);
-        }
+        scalar a12 = (0.5 * (uLeft + uRight)) > 0. ?
+                     sqr(aStar) / max(uLeft, aStar) :
+                     sqr(aStar) / max(uRight, aStar);
 
-        // Eq (29)
         scalar MLeft   = uLeft/a12;   
         scalar MRight  = uRight/a12;   
 
-        // Mach number and pressure splitting functions Eq (27) and (28) ("Mach_Left_plus, ...")
-        // Eq (27)
-        scalar Mlp, Plp;
+        std::cout << "\na12: "    << a12;
+        std::cout << "\nMLeft: "  << MLeft;
+        std::cout << "\nMRight: " << MRight;
+        std::cout << "\n----------------------------";
+        // std::cout << "\n";
 
-        if (mag(MLeft) > 1.)
-        {
-            Mlp = 0.5*(MLeft + mag(MLeft));
-            Plp = 0.5*(1 + sign(MLeft));
-        }
-        else if (mag(MLeft) <= 1.)
-        {
-            Mlp = 0.25 * sqr(MLeft + 1); //+ beta*sqr(1 - sqr(MLeft));
-            Plp = 0.25 * sqr(MLeft + 1)*(2 - MLeft) + alpha*MLeft*sqr(sqr(MLeft) - 1);
-        }
-        else
-        {
-            Mlp = 0.0;
-            Plp = 0.0;
-        }
+        scalar psiLeftp =  mag(MLeft) > 1. ? 
+                           0.5*(1 + sign(MLeft)) : 
+                           0.25*sqr(MLeft + 1.) * (2. - MLeft) + alpha*MLeft*sqr(sqr(MLeft) - 1.);
+        scalar psiRightm = mag(MRight) > 1. ? 
+                           0.5*(1 - sign(MRight)) : 
+                           0.25*sqr(MRight - 1.) * (2. + MRight) - alpha*MRight*sqr(sqr(MRight) - 1.);
 
-        scalar Mrm, Prm;
+        std::cout << "\npsiLeftp: " << psiLeftp;
+        std::cout << "\npsiRightp: " << psiRightm;
 
-        if (mag(MRight) > 1.)
-        {
-            Mrm = 0.5*(MRight - mag(MRight));
-            Prm = 0.5*(1 - sign(MRight));
-        }
-        else if (mag(MRight) <= 1.)
-        {
-            Mrm = - 0.25*sqr(MRight - 1); // - beta * sqr(1 - sqr(MRight));
-            Prm = 0.25 * sqr(MRight - 1) * (2 + MRight) - alpha*MRight*sqr(sqr(MRight) - 1);
-        }
-        else
-        {
-            Mrm = 0.0;
-            Prm = 0.0;
-        }
-          
-        // Eq (26)
-        scalar ps = Plp*pLeft + Prm*pRight;
+        scalar Mhat = min(1., 1./a12 * sqrt((magSqr(uLeft) + magSqr(uRight))/4.));
+        scalar h = sqr(1. - Mhat);
+        scalar fp = sqr(1. - h);
 
-        scalar fL, fR;
-        if (ps != 0.)
-        {
-            fL = pLeft/ps  - 1;
-            fR = pRight/ps - 1;
-        }
-        else
-        {
-            fL = 0.0;
-            fR = 0.0;
-        }
+        std::cout << "\nMhat: " << Mhat;
+        std::cout << "\nh: "  <<  h;
+        std::cout << "\nfp: " << fp;
+        
+        scalar p12 = (pLeft + pRight)/2. + (psiLeftp - psiRightm)/2. * (pLeft - pRight) + fp * (psiLeftp + psiRightm - 1.) * (pLeft + pRight)/2.;
 
-        // Eq (25)
-        scalar w   = 1 - pow(min(pLeft/pRight, pRight/pLeft), 3);
+        std::cout << "\np12: "    << p12;
+        // std::cout << "\n";
 
-        // m12 below Eq (13)
-        scalar m12 = Mlp + Mrm;
+        scalar Mplus =  mag(MLeft) > 1. ?
+                 0.5*(MLeft + mag(MLeft)) :
+                 0.25*sqr(MLeft + 1.) + beta * sqr(sqr(MLeft) - 1.);
+        scalar Mminus = mag(MRight) > 1. ?
+                 0.5*(MRight - mag(MRight)) :
+                 -0.25*sqr(MRight - 1.) - beta * sqr(sqr(MRight) - 1.);
 
-        // Below Eq (24)
-        scalar barMlp, barMrm;
+        std::cout << "\nMplus: "  << Mplus;
+        std::cout << "\nMminus: " << Mminus;
 
-        if (m12 >= 0)
-        {
-            barMlp = Mlp + Mrm*((1 - w)*(1 + fR) - fL);
-            barMrm = Mrm * w*(1+fR);
-        }
-        else
-        {
-            barMlp = Mlp * w*(1+fL);
-            barMrm = Mrm + Mlp*((1 - w)*(1 + fL) - fR);
-        }
+        scalar ps = psiLeftp*pLeft + psiRightm*pRight;
+        scalar fL = ps != 0. ? pLeft/ps - 1. : 0.;
+        scalar fR = ps != 0. ? pRight/ps - 1. : 0.;
+        scalar w  = 1 - pow(min(pLeft/pRight, pRight/pLeft), 3.);
 
-    	rhoFlux  = (barMlp * a12 * rhoLeft        + barMrm * a12 * rhoRight        ) * magSf;
-    	rhoUFlux = (barMlp * a12 * rhoLeft*ULeft  + barMrm * a12 * rhoRight*URight ) * magSf + ps*Sf;
-    	rhoEFlux = (barMlp * a12 * rhoLeft*HnLeft + barMrm * a12 * rhoRight*HnRight) * magSf;
+        scalar m12 = Mplus + Mminus;
+        std::cout << "\nps: "  << ps;
+        std::cout << "\nM12: " << m12;
+        std::cout << "\n----------------------------";
+        // std::cout << "\n";
+
+        scalar MLeftBar  = m12 >= 0. ? 
+                           Mplus + Mminus - Mminus * w * (1. + fR) + (fL*Mplus + fR*Mminus) :
+                           Mplus * w * (1. + fL);
+        scalar MRightBar = m12 >= 0. ? 
+                           Mminus * w * (1. + fR) :
+                           Mplus + Mminus - Mplus * w * (1. + fL) + (fL*Mplus + fR*Mminus);
+
+        std::cout << "\nMLeftBar: "  << MLeftBar;
+        std::cout << "\nMRightBar: " << MRightBar;
+        std::cout << "\n----------------------------";
+
+    	rhoFlux  = (MLeftBar * rhoLeft        + MRightBar * rhoRight        ) * magSf * a12;
+    	rhoUFlux = (MLeftBar * rhoLeft*ULeft  + MRightBar * rhoRight*URight ) * magSf * a12 + p12*Sf;
+    	rhoEFlux = (MLeftBar * rhoLeft*HnLeft + MRightBar * rhoRight*HnRight) * magSf * a12;
+        std::cout << "\n";
+        std::cout << "############ NEXT-ITERATION #############\n";
     }
     else if((scheme == "Tadmor") || (scheme == "Kurganov")){
         scalar ap = max(max(uLeft+aLeft,uRight+aRight),0.0);

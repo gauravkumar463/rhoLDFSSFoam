@@ -2,8 +2,8 @@
 volScalarField c2 = (thermo.gamma()-1)*thermo.Cp()*T;
 
 // Thermodynamics
-// const volScalarField Cv = thermo.Cv();
-// const volScalarField R  = thermo.Cp() - Cv;
+volScalarField Cv = thermo.Cv();
+// volScalarField R  = thermo.Cp() - Cv;
 
 rpsi = 1/psi;
 
@@ -15,6 +15,9 @@ surfaceScalarField e_neg(interpolate(e, neg, T.name()));
 
 surfaceScalarField T_pos(interpolate(T, pos, T.name()));
 surfaceScalarField T_neg(interpolate(T, neg, T.name()));
+
+surfaceScalarField Cv_pos(interpolate(Cv, pos, T.name()));
+surfaceScalarField Cv_neg(interpolate(Cv, neg, T.name()));
 
 surfaceScalarField p_pos(interpolate(p, pos, p.name()));
 surfaceScalarField p_neg(interpolate(p, neg, p.name()));
@@ -35,6 +38,8 @@ forAll(phi,faceI){
         p_neg[faceI],
         T_pos[faceI],
         T_neg[faceI],
+        Cv_pos[faceI],
+        Cv_neg[faceI],
         U_pos[faceI],
         U_neg[faceI],
         rpsi_pos[faceI],
@@ -62,6 +67,7 @@ forAll(bfield, patchi)
     fvsPatchScalarField& amaxSfp = amaxSf.boundaryFieldRef()[patchi];
     const fvPatchScalarField& pp = p.boundaryField()[patchi];
     const fvPatchScalarField& Tp = T.boundaryField()[patchi];
+    const fvPatchScalarField& Cvp = Cv.boundaryField()[patchi];
     const fvPatchVectorField& Up = U.boundaryField()[patchi];
     const fvPatchScalarField& rpsip = rpsi.boundaryField()[patchi];
     const fvPatchScalarField& ep = e.boundaryField()[patchi];
@@ -74,12 +80,14 @@ forAll(bfield, patchi)
     {
         const scalarField pcp = p.boundaryField()[patchi].patchInternalField();
         const scalarField Tcp = T.boundaryField()[patchi].patchInternalField();
+        const scalarField Cvcp = Cv.boundaryField()[patchi].patchInternalField();
         const vectorField Ucp = U.boundaryField()[patchi].patchInternalField();
         const scalarField rpsicp = rpsi.boundaryField()[patchi].patchInternalField();
         const scalarField ecp = e.boundaryField()[patchi].patchInternalField();
         const scalarField kcp = k_.boundaryField()[patchi].patchInternalField();
         const scalarField pcnb = p.boundaryField()[patchi].patchNeighbourField();
         const scalarField Tcnb = T.boundaryField()[patchi].patchNeighbourField();
+        const scalarField Cvcnb = Cv.boundaryField()[patchi].patchNeighbourField();
         const vectorField Ucnb = U.boundaryField()[patchi].patchNeighbourField();
         const scalarField rpsicnb = rpsi.boundaryField()[patchi].patchNeighbourField();
         const scalarField ecnb = e.boundaryField()[patchi].patchNeighbourField();
@@ -97,6 +105,8 @@ forAll(bfield, patchi)
                 pcnb[faceI],
                 Tcp[faceI],
                 Tcnb[faceI],
+                Cvcp[faceI],
+                Cvcnb[faceI],
                 Ucp[faceI],
                 Ucnb[faceI],
                 rpsicp[faceI],
@@ -126,6 +136,8 @@ forAll(bfield, patchi)
                 pp[faceI],
                 Tp[faceI],
                 Tp[faceI],
+                Cvp[faceI],
+                Cvp[faceI],
                 Up[faceI],
                 Up[faceI],
                 rpsip[faceI],

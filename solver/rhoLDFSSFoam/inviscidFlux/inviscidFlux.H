@@ -80,6 +80,8 @@ public:
         const scalar pRight,
         const scalar TLeft,
         const scalar TRight,
+        const scalar CvLeft,
+        const scalar CvRight,
         const vector ULeft,
         const vector URight,
         const scalar rpsiLeft,
