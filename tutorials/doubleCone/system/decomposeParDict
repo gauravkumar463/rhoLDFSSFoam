@@ -15,9 +15,9 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-numberOfSubdomains 64;
+numberOfSubdomains 10;
 
-method          metis;
+method          scotch;
 
 
 // ************************************************************************* //

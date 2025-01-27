@@ -33,6 +33,7 @@ mixture
     }
     thermodynamics
     {
+        Tref            0;
         Cp              1004.5;
         Hf              0;
     }

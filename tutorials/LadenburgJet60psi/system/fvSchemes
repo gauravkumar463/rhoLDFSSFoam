@@ -14,7 +14,7 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-fluxScheme	   LDFSS; // Options: LDFSS, Kurganov, Tadmor
+fluxScheme	   AUSMPWplus; // Options: LDFSS, Kurganov, Tadmor
 
 inviscid	   false;
 

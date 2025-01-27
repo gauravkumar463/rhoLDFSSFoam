@@ -15,9 +15,10 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-inviscid	    false;
+fluxScheme       AUSMPWplus;
 
-e0		    -302433;
+inviscid	    false;
+e0		        -302433;
 
 ddtSchemes
 {
@@ -43,11 +44,12 @@ laplacianSchemes
 interpolationSchemes
 {
     default         linear;
-    reconstruct(p)  vanLeer; // change to upwind for initial solution upto 2e-4;
-    reconstruct(U)  vanLeerV;
-    reconstruct(T)  vanLeer;
-    reconstruct(e)  vanLeer;
-    reconstruct(k)  vanLeer; // For turbulence. No need to change
+    limitedCubic    cellLimited<cubic> 1.5 Gauss linear 1;
+    reconstruct(p)  vanLeer  limitedCubic; // change to upwind for initial solution upto 2e-4;
+    reconstruct(U)  vanLeerV limitedCubic;
+    reconstruct(T)  vanLeer  limitedCubic;
+    reconstruct(e)  vanLeer  limitedCubic;
+    reconstruct(k)  vanLeer  limitedCubic; // For turbulence. No need to change
 }
 
 snGradSchemes

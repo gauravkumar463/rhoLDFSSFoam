@@ -159,7 +159,6 @@ void Foam::inviscidFlux::evaluateFlux
 
         // std::cout << "\n#################################################";
         // std::cout << "\nThanks for viewing my code!";
-        // // std::cout << "\n";
         // std::cout << "\naLeft: "  << aLeft;
         // std::cout << "\naRight: " << aRight;
         // std::cout << "\npLeft: "  << pLeft;
@@ -169,7 +168,6 @@ void Foam::inviscidFlux::evaluateFlux
         // std::cout << "\nuLeft: "  << uLeft;
         // std::cout << "\nuRight: " << uRight;
         // std::cout << "\n----------------------------";
-        // std::cout << "\n";
 
         const scalar alpha = 3.0/16.0;
         const scalar beta  = 1.0/8.0;
@@ -177,22 +175,25 @@ void Foam::inviscidFlux::evaluateFlux
         scalar vLeftSqr  = magSqr(ULeft)  - sqr(uLeft);
         scalar vRightSqr = magSqr(URight) - sqr(uRight);
 
-        std::cout << "\nvLeftSqr: " << vLeftSqr;
-        std::cout << "\nvRightSqr: " << vRightSqr;
-        std::cout << "\n----------------------------";
+        // std::cout << "\nvLeftSqr: " << vLeftSqr;
+        // std::cout << "\nvRightSqr: " << vRightSqr;
+        // std::cout << "\n----------------------------";
 
-    	scalar HnLeft  = CvLeft*TLeft   + 0.5*sqr(uLeft)  + kLeft  + pLeft/rhoLeft;
-        scalar HnRight = CvRight*TRight + 0.5*sqr(uRight) + kRight + pRight/rhoRight;
-        scalar Hn      = 0.5 * (HnLeft+HnRight - 0.5*(vLeftSqr + vRightSqr));
 
-        // std::cout << "\nHn: "      << HnRight;
+//      	scalar HnLeft  = CvLeft*TLeft   + 0.5*magSqr(uLeft)  + kLeft  + pLeft/rhoLeft;
+        // std::cout << "\nHnLeft: " << HnLeft;
+//        scalar HnRight = CvRight*TRight + 0.5*magSqr(uRight) + kRight + pRight/rhoRight;
+        // std::cout << "\nHnRight: " << HnRight;
+        // scalar Hn      = 0.5 * (HnLeft+HnRight - 0.5*(vLeftSqr + vRightSqr));
+        // std::cout << "\nHn: "      << Hn;
 
-        scalar aStar = sqrt(2.0*((gamma - 1.)/(gamma + 1.)) *Hn);
-        // scalar aStar = sqrt(0.5*(sqr(aLeft)+sqr(aRight)));
+        // scalar aStar = sqrt(2.0*((gamma - 1.)/(gamma + 1.)) *Hn);
+    	scalar aStar     = sqrt(0.5*(sqr(aLeft)+sqr(aRight)));
+        // std::cout << "\naStar: "    << aStar;
 
         scalar a12 = (0.5 * (uLeft + uRight)) > 0. ?
-                     sqr(aStar) / max(uLeft, aStar) :
-                     sqr(aStar) / max(uRight, aStar);
+                     sqr(aStar) / max(mag(uLeft), aStar) :
+                     sqr(aStar) / max(mag(uRight), aStar);
 
         scalar MLeft   = uLeft/a12;   
         scalar MRight  = uRight/a12;   
@@ -201,7 +202,6 @@ void Foam::inviscidFlux::evaluateFlux
         // std::cout << "\nMLeft: "  << MLeft;
         // std::cout << "\nMRight: " << MRight;
         // std::cout << "\n----------------------------";
-        // std::cout << "\n";
 
         scalar psiLeftp =  mag(MLeft) > 1. ? 
                            0.5*(1 + sign(MLeft)) : 
@@ -213,7 +213,7 @@ void Foam::inviscidFlux::evaluateFlux
         // std::cout << "\npsiLeftp: " << psiLeftp;
         // std::cout << "\npsiRightp: " << psiRightm;
 
-        scalar Mhat = min(1., 1./a12 * sqrt((magSqr(uLeft) + magSqr(uRight))/4.));
+        scalar Mhat = min(1., 1./a12 * sqrt((magSqr(uLeft) + magSqr(uRight))/2.));
         scalar h = sqr(1. - Mhat);
         scalar fp = sqr(1. - h);
 
@@ -224,7 +224,6 @@ void Foam::inviscidFlux::evaluateFlux
         scalar p12 = (pLeft + pRight)/2. + (psiLeftp - psiRightm)/2. * (pLeft - pRight) + fp * (psiLeftp + psiRightm - 1.) * (pLeft + pRight)/2.;
 
         // std::cout << "\np12: "    << p12;
-        // std::cout << "\n";
 
         scalar Mplus =  mag(MLeft) > 1. ?
                  0.5*(MLeft + mag(MLeft)) :
@@ -245,7 +244,6 @@ void Foam::inviscidFlux::evaluateFlux
         // std::cout << "\nps: "  << ps;
         // std::cout << "\nM12: " << m12;
         // std::cout << "\n----------------------------";
-        // std::cout << "\n";
 
         scalar MLeftBar  = m12 >= 0. ? 
                            Mplus + Mminus - Mminus * w * (1. + fR) + (fL*Mplus + fR*Mminus) :
@@ -256,13 +254,16 @@ void Foam::inviscidFlux::evaluateFlux
 
         // std::cout << "\nMLeftBar: "  << MLeftBar;
         // std::cout << "\nMRightBar: " << MRightBar;
-        // std::cout << "\n----------------------------";
+
+    	// scalar HLeft  = eLeft + 0.5*magSqr(ULeft) + kLeft + p12/rhoLeft;
+    	// scalar HRight = eRight + 0.5*magSqr(URight) + kRight + p12/rhoRight;
+    	scalar HLeft  = CvLeft*TLeft + 0.5*magSqr(ULeft) + kLeft + p12/rhoLeft;
+    	scalar HRight = CvRight*TRight + 0.5*magSqr(URight) + kRight + p12/rhoRight;
 
     	rhoFlux  = (MLeftBar * rhoLeft        + MRightBar * rhoRight        ) * magSf * a12;
     	rhoUFlux = (MLeftBar * rhoLeft*ULeft  + MRightBar * rhoRight*URight ) * magSf * a12 + p12*Sf;
-    	rhoEFlux = (MLeftBar * rhoLeft*HnLeft + MRightBar * rhoRight*HnRight) * magSf * a12;
-        // std::cout << "\n";
-        // std::cout << "############ NEXT-ITERATION #############\n";
+    	rhoEFlux = (MLeftBar * rhoLeft*HLeft + MRightBar * rhoRight*HRight) * magSf * a12;
+        // std::cout << "\n############ NEXT-ITERATION #############\n";
     }
     else if((scheme == "Tadmor") || (scheme == "Kurganov")){
         scalar ap = max(max(uLeft+aLeft,uRight+aRight),0.0);
