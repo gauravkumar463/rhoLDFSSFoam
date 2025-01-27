@@ -8,4 +8,7 @@
 tutorials/**/0.*
 tutorials/**/*e-*
 tutorials/**/proc*
-tutorials/**/[1-9]
+tutorials/**/[0-9]
+tutorials/**/polyMesh
+
+!tutorials/**/[0-9].orig
