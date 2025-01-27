@@ -2,8 +2,8 @@
 volScalarField c2 = (thermo.gamma()-1)*thermo.Cp()*T;
 
 // Thermodynamics
-const volScalarField Cv = thermo_.Cv();
-const volScalarField R  = thermo_.Cp() - Cv;
+// const volScalarField Cv = thermo.Cv();
+// const volScalarField R  = thermo.Cp() - Cv;
 
 rpsi = 1/psi;
 
@@ -73,8 +73,8 @@ forAll(bfield, patchi)
     if (bfield[patchi].coupled())
     {
         const scalarField pcp = p.boundaryField()[patchi].patchInternalField();
-        const vectorField Ucp = U.boundaryField()[patchi].patchInternalField();
         const scalarField Tcp = T.boundaryField()[patchi].patchInternalField();
+        const vectorField Ucp = U.boundaryField()[patchi].patchInternalField();
         const scalarField rpsicp = rpsi.boundaryField()[patchi].patchInternalField();
         const scalarField ecp = e.boundaryField()[patchi].patchInternalField();
         const scalarField kcp = k_.boundaryField()[patchi].patchInternalField();
