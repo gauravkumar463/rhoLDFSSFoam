@@ -180,20 +180,23 @@ void Foam::inviscidFlux::evaluateFlux
         // std::cout << "\n----------------------------";
 
 
+    	scalar HLeft   = pLeft/(rhoLeft*(gamma - 1.)) + 0.5*magSqr(ULeft) + kLeft + pLeft/rhoLeft;
+    	scalar HRight  = pRight/(rhoRight*(gamma - 1.)) + 0.5*magSqr(URight) + kRight + pRight/rhoRight;
 //      	scalar HnLeft  = CvLeft*TLeft   + 0.5*magSqr(uLeft)  + kLeft  + pLeft/rhoLeft;
         // std::cout << "\nHnLeft: " << HnLeft;
 //        scalar HnRight = CvRight*TRight + 0.5*magSqr(uRight) + kRight + pRight/rhoRight;
         // std::cout << "\nHnRight: " << HnRight;
-        // scalar Hn      = 0.5 * (HnLeft+HnRight - 0.5*(vLeftSqr + vRightSqr));
+        scalar Hn      = 0.5 * (HLeft+HRight - 0.5*(vLeftSqr + vRightSqr));
         // std::cout << "\nHn: "      << Hn;
 
-        // scalar aStar = sqrt(2.0*((gamma - 1.)/(gamma + 1.)) *Hn);
-    	scalar aStar     = sqrt(0.5*(sqr(aLeft)+sqr(aRight)));
+        scalar aStar = sqrt(max(0.0, (2.0 *(gamma - 1.0) / (gamma + 1.0)) * Hn));
+
+    	// scalar aStar     = sqrt(0.5*(sqr(aLeft)+sqr(aRight)));
         // std::cout << "\naStar: "    << aStar;
 
         scalar a12 = (0.5 * (uLeft + uRight)) > 0. ?
-                     sqr(aStar) / max(mag(uLeft), aStar) :
-                     sqr(aStar) / max(mag(uRight), aStar);
+                     sqr(aStar) / max(uLeft, aStar) :
+                     sqr(aStar) / max(uRight, aStar);
 
         scalar MLeft   = uLeft/a12;   
         scalar MRight  = uRight/a12;   
@@ -257,12 +260,12 @@ void Foam::inviscidFlux::evaluateFlux
 
     	// scalar HLeft  = eLeft + 0.5*magSqr(ULeft) + kLeft + p12/rhoLeft;
     	// scalar HRight = eRight + 0.5*magSqr(URight) + kRight + p12/rhoRight;
-    	scalar HLeft  = CvLeft*TLeft + 0.5*magSqr(ULeft) + kLeft + p12/rhoLeft;
-    	scalar HRight = CvRight*TRight + 0.5*magSqr(URight) + kRight + p12/rhoRight;
+    	// scalar HLeft  = CvLeft*TLeft + 0.5*magSqr(ULeft) + kLeft + p12/rhoLeft;
+    	// scalar HRight = CvRight*TRight + 0.5*magSqr(URight) + kRight + p12/rhoRight;
 
-    	rhoFlux  = (MLeftBar * rhoLeft        + MRightBar * rhoRight        ) * magSf * a12;
-    	rhoUFlux = (MLeftBar * rhoLeft*ULeft  + MRightBar * rhoRight*URight ) * magSf * a12 + p12*Sf;
-    	rhoEFlux = (MLeftBar * rhoLeft*HLeft + MRightBar * rhoRight*HRight) * magSf * a12;
+    	rhoFlux  = (MLeftBar * rhoLeft        + MRightBar * rhoRight       ) * magSf * a12;
+    	rhoUFlux = (MLeftBar * rhoLeft*ULeft  + MRightBar * rhoRight*URight) * magSf * a12 + p12*Sf;
+    	rhoEFlux = (MLeftBar * rhoLeft*HLeft  + MRightBar * rhoRight*HRight) * magSf * a12;
         // std::cout << "\n############ NEXT-ITERATION #############\n";
     }
     else if((scheme == "Tadmor") || (scheme == "Kurganov")){

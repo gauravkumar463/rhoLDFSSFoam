@@ -14,9 +14,9 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-fluxScheme	   AUSMPWplus; // Options: LDFSS, AUSMPWplus, Kurganov, Tadmor
+fluxScheme	       AUSMPWplus; // Options: LDFSS, AUSMPWplus, Kurganov, Tadmor
 
-inviscid	   true;
+inviscid	         true;
 
 e0                 0;   // Enthalpy at 0 Kelvin. This value is required when using JANAF table e0 at 0 K is not 0.
 
