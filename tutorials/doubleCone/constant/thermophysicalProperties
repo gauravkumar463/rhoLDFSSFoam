@@ -53,6 +53,7 @@ mixture
     }
     thermodynamics
    {
+        Tref 0;
         Tlow 30;
         Thigh 6000;
         Tcommon 1000;

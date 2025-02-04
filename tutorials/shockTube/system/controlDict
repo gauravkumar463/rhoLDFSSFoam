@@ -10,51 +10,44 @@ FoamFile
     version     2.0;
     format      ascii;
     class       dictionary;
-    object      fvSchemes;
+    object      controlDict;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-fluxScheme	   AUSMPWplus; // Options: LDFSS, Kurganov, Tadmor
+application     rhoLDFSSFoam;
 
-inviscid	   false;
+startFrom       startTime;
 
-e0		   0;	// Enthalpy at 0 Kelvin. This value is required when using JANAF table e0 at 0 K is not 0. 
+startTime       0;
 
-ddtSchemes
-{
-    default         Euler;
-}
+stopAt          endTime;
 
-gradSchemes
-{
-    default         Gauss linear;
-}
+endTime         0.007;
 
-divSchemes
-{
-    default         none;
+deltaT          1e-6;
 
-    div(tauMC)      Gauss linear;
-}
+writeControl    adjustableRunTime;
 
-laplacianSchemes
-{
-    default         Gauss linear corrected;
-}
+writeInterval   0.0001;
 
-interpolationSchemes
-{
-    default         linear;
+purgeWrite      0;
 
-    reconstruct(p) vanLeer;
-    reconstruct(U)  vanLeerV;
-    reconstruct(T)  vanLeer;
-}
+writeFormat     ascii;
 
-snGradSchemes
-{
-    default         corrected;
-}
+writePrecision  6;
 
+writeCompression off;
+
+timeFormat      general;
+
+timePrecision   6;
+
+runTimeModifiable true;
+
+adjustTimeStep  yes;
+
+maxCo           0.5;
+
+maxDeltaT       1;
 
 // ************************************************************************* //

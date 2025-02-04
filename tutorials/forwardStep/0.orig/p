@@ -9,51 +9,47 @@ FoamFile
 {
     version     2.0;
     format      ascii;
-    class       dictionary;
-    object      fvSchemes;
+    class       volScalarField;
+    object      p;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-fluxScheme	   AUSMPWplus; // Options: LDFSS, Kurganov, Tadmor
+dimensions      [1 -1 -2 0 0 0 0];
 
-inviscid	   false;
+internalField   uniform 1;
 
-e0		   0;	// Enthalpy at 0 Kelvin. This value is required when using JANAF table e0 at 0 K is not 0. 
-
-ddtSchemes
+boundaryField
 {
-    default         Euler;
-}
+    inlet
+    {
+        type            fixedValue;
+        value           uniform 1;
+    }
 
-gradSchemes
-{
-    default         Gauss linear;
-}
+    outlet
+    {
+        type            zeroGradient;
+    }
 
-divSchemes
-{
-    default         none;
+    bottom
+    {
+        type            symmetryPlane;
+    }
 
-    div(tauMC)      Gauss linear;
-}
+    top
+    {
+        type            symmetryPlane;
+    }
 
-laplacianSchemes
-{
-    default         Gauss linear corrected;
-}
+    obstacle
+    {
+        type            zeroGradient;
+    }
 
-interpolationSchemes
-{
-    default         linear;
-
-    reconstruct(p) vanLeer;
-    reconstruct(U)  vanLeerV;
-    reconstruct(T)  vanLeer;
-}
-
-snGradSchemes
-{
-    default         corrected;
+    defaultFaces
+    {
+        type            empty;
+    }
 }
 
 

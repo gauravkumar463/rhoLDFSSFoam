@@ -11,55 +11,39 @@ FoamFile
     format      ascii;
     class       dictionary;
     location    "system";
-    object      fvSchemes;
+    object      fvSolution;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-fluxScheme       AUSMPWplus;
-
-inviscid	    false;
-e0		        -302433;
-
-ddtSchemes
+solvers
 {
-    default         Euler;
-}  
-
-gradSchemes
-{
-    default         Gauss linear;
+    "(p|U|e|T)"
+    {
+        solver		PCG;
+        preconditioner  DIC;
+        tolerance	1e-10;
+        relTol		1e-5;
+    }
+    "(k|omega)"
+    {
+        solver		smoothSolver;
+        smoother	GaussSeidel;
+        tolerance	1e-10;
+        relTol		1e-5;
+    }
 }
-
-divSchemes
+multiStage
 {
-    default         none;
-    div(tauMC)      Gauss linear;
+    numberRungeKuttaStages 3;
+    RKCoeff 1.0 0.25 0.66667;
 }
-
-laplacianSchemes
+cache
 {
-    default         Gauss linear corrected;
+    grad(U);
+    grad(p);
+    grad(T);
+    grad(e);
+    grad(k);
+    grad(rpsi);
 }
-
-interpolationSchemes
-{
-    default         linear;
-    limitedCubic    cellLimited<cubic> 1.5 Gauss linear 1;
-    reconstruct(p)  vanLeer  limitedCubic; // change to upwind for initial solution upto 2e-4;
-    reconstruct(U)  vanLeerV limitedCubic;
-    reconstruct(T)  vanLeer  limitedCubic;
-    reconstruct(e)  vanLeer  limitedCubic;
-    reconstruct(k)  vanLeer  limitedCubic; // For turbulence. No need to change
-}
-
-snGradSchemes
-{
-    default         corrected;
-}
-
-wallDist
-{
-    method	    meshWave;
-}
-
 // ************************************************************************* //

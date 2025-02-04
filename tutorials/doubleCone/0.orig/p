@@ -9,58 +9,44 @@ FoamFile
 {
     version     2.0;
     format      ascii;
-    class       dictionary;
-    location    "system";
-    object      controlDict;
+    class       volScalarField;
+    object      p;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-application     rhoLDFSSFoam;
+dimensions      [1 -1 -2 0 0 0 0];
 
-startFrom       latestTime;
+internalField   uniform 747;
 
-startTime       0;
-
-stopAt          endTime;
-
-endTime         5e-2;
-
-deltaT          1e-9;
-
-writeControl    adjustableRunTime;
-
-writeInterval   1e-5;
-
-purgeWrite      0;
-
-writeFormat     ascii;
-
-writePrecision  8;
-
-writeCompression on;
-
-timeFormat      general;
-
-timePrecision   6;
-
-runTimeModifiable true;
-
-adjustTimeStep  yes;
-
-maxCo           0.2;
-
-maxDeltaT       1e-06;
-
-functions
+boundaryField
 {
-//    #includeFunc MachNo
-//    #includeFunc vorticity
+    inlet
+    {
+        type            fixedValue;
+        value           uniform 747;
+    }
+
+    outlet
+    {
+        type            waveTransmissive;
+        gamma           1.4;
+        psi             thermo:psi;
+    }
+
+    top
+    {
+        type            zeroGradient;
+    }
+
+    wedge
+    {
+        type            zeroGradient;
+    }
+
+    "side.*"
+    {
+        type            wedge;
+    }
 }
 
-OptimisationSwitches
-{
-      fileHandler collated;
-      maxThreadFileBufferSize 2e9;
-      maxMasterFileBufferSize 2e9;
-}
 // ************************************************************************* //

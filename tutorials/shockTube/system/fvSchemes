@@ -14,11 +14,11 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-fluxScheme	   AUSMPWplus; // Options: LDFSS, Kurganov, Tadmor
+fluxScheme	   AUSMPWplus; // Options: LDFSS, AUSMPWplus, Kurganov, Tadmor
 
-inviscid	   false;
+inviscid	   true;
 
-e0		   0;	// Enthalpy at 0 Kelvin. This value is required when using JANAF table e0 at 0 K is not 0. 
+e0                 0;   // Enthalpy at 0 Kelvin. This value is required when using JANAF table e0 at 0 K is not 0.
 
 ddtSchemes
 {
@@ -46,9 +46,10 @@ interpolationSchemes
 {
     default         linear;
 
-    reconstruct(p) vanLeer;
-    reconstruct(U)  vanLeerV;
-    reconstruct(T)  vanLeer;
+    limitedCubic    cellLimited<cubic> 1.5 Gauss linear 1;
+    reconstruct(p)  vanLeer  limitedCubic;
+    reconstruct(U)  vanLeerV limitedCubic;
+    reconstruct(T)  vanLeer  limitedCubic;
 }
 
 snGradSchemes
